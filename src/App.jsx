@@ -6,11 +6,10 @@ import { withRetry } from './utility/withRetry';
 function App() {
   const callApi = useCallback(
     withRetry({
-      callBackFn: (signal, reject = false) => {
+      callBackFn: (signal, ...args) => {
         return defaultClient.GET({
           mockEndpoint: defaultClient.availableEnpoints.productList,
           sleepTimer: 2000,
-          reject,
           signal,
         });
       },

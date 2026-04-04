@@ -2,8 +2,8 @@ const withRetry = ({
   callBackFn,
   retries = 3,
   callIntervalDelay = 0,
-  onretryQueueFailed = () => {},
-  onSuccess = () => {},
+  onretryQueueFailed = () => { },
+  onSuccess = () => { },
 }) => {
   let result = null;
   let propogateError = null;
@@ -13,7 +13,7 @@ const withRetry = ({
 
     for (i = 0; i < retries; i++) {
       try {
-        result = await callBackFn(signal, i < 2, ...args);
+        result = await callBackFn(signal, ...args);
         break;
       } catch (err) {
         propogateError = err;
@@ -30,9 +30,11 @@ const withRetry = ({
 
     if (i >= retries) {
       onretryQueueFailed(propogateError || 'Something went wrong...');
-    } else if (result) {
+    }
+    else if (result) {
       onSuccess(result);
     }
+
   };
 };
 
