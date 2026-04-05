@@ -97,7 +97,7 @@ const usePromise = ({
             payload: dataMapper(data),
           });
 
-          promiseExecutionStatusHandlers?.onSuccess(data);
+          promiseExecutionStatusHandlers?.onSuccess?.(data);
         } catch (err) {
           console.log("errerr", err?.name);
           updateState({
@@ -105,16 +105,16 @@ const usePromise = ({
             payload: err,
           });
           if (err.name === isAbortErrorType) {
-            promiseExecutionStatusHandlers?.isRequestAbortionComplete(err);
+            promiseExecutionStatusHandlers?.isRequestAbortionComplete?.(err);
           } else {
-            promiseExecutionStatusHandlers?.onError(err);
+            promiseExecutionStatusHandlers?.onError?.(err);
           }
         } finally {
           updateState({
             type: STATE_TYPE.LOADING,
             payload: false,
           });
-          promiseExecutionStatusHandlers?.onComplete();
+          promiseExecutionStatusHandlers?.onComplete?.();
         }
       }
       return null;

@@ -1,16 +1,14 @@
-import { useEffect } from "react";
-import "./App.css";
-import { usePromise } from "./hooks/usePromise";
 import axios from "axios";
+import { usePromise } from "../hooks/usePromise";
 
-function App() {
-  const { callApi, cancelRequest, currentState, updateState } = usePromise({
+const PromisePage = () => {
+  const { currentState } = usePromise({
     abortReasonDefault: "this request was cancelled",
     dataMapper: (data) => data?.data?.products || [],
     defaultValue: [],
     executeOnMount: true,
     execute: async (signal) => {
-      return axios.get("https://dummyjson.com/products?delay=4000", { signal });
+      return axios.get("https://dummyjson.com/products?delay=1000", { signal });
     },
     promiseExecutionStatusHandlers: {
       isRequestAbortionComplete: () => {
@@ -19,13 +17,6 @@ function App() {
     },
   });
   const { data } = currentState;
-
-  useEffect(() => {
-    setTimeout(() => {
-      cancelRequest();
-    }, 1000);
-  }, []);
-
 
   if (currentState?.isPending) {
     return <div>This is loading....</div>;
@@ -50,6 +41,6 @@ function App() {
       ))}
     </div>
   );
-}
+};
 
-export default App;
+export default PromisePage;
