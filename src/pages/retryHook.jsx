@@ -1,32 +1,24 @@
 import { useCallback, useEffect } from "react";
 import { withRetry } from "../utility/withRetry";
 import { defaultClient } from "../MockClient/MockClient";
+import useRetry from "../hooks/useRetryHook";
+import axios from "axios";
 
 function RetryHookPage() {
-  const callApi = useCallback(
-    // eslint-disable-next-line react-hooks/use-memo
-    withRetry({
-      callBackFn: (signal) => {
-        return defaultClient.GET({
-          mockEndpoint: defaultClient.availableEnpoints.productList,
-          sleepTimer: 2000,
-          signal,
-        });
+  const { currentState } = useRetry({
+    retryableStatusCodes: [400, 500, 502],
+    promiseExecutionStatusHandlers: {
+      isRetrySuccessFull: () => {
+        console.log("The retry was successful");
       },
-      retries: 3,
-      onretryQueueFailed: (err) => {
-        console.log("we failed to retry the queue", err);
-      },
-      onSuccess: (data) => {
-        console.log("Success", data);
-      },
-    }),
-    [],
-  );
+    },
+    execute: async () => {
+      return axios.get("/api");
+    },
+    executeOnMount: true,
+  });
 
-  useEffect(() => {
-    callApi();
-  }, []);
+  console.log("currentStatecurrentState", currentState);
 
   return <div>Retry hook page</div>;
 }

@@ -90,16 +90,21 @@ const usePromise = ({
 
           const signal = currentState.abortController.signal;
 
-          const data = await execute(signal, ...args);
+          const response = await execute(signal, ...args);
 
           updateState({
             type: STATE_TYPE.DATA,
-            payload: dataMapper(data),
+            payload: dataMapper(response),
           });
 
-          promiseExecutionStatusHandlers?.onSuccess?.(data);
+          promiseExecutionStatusHandlers?.onSuccess?.(response);
+
+          return {
+            data: dataMapper(response),
+            status: response.status || 200,
+          };
         } catch (err) {
-          console.log("errerr", err?.name);
+          console.log("errerrerr", err);
           updateState({
             type: STATE_TYPE.ERROR,
             payload: err,
@@ -109,6 +114,11 @@ const usePromise = ({
           } else {
             promiseExecutionStatusHandlers?.onError?.(err);
           }
+          return {
+            data: null,
+            status: err?.response.status || 500,
+            isAbortErr: err.name === isAbortErrorType,
+          };
         } finally {
           updateState({
             type: STATE_TYPE.LOADING,
