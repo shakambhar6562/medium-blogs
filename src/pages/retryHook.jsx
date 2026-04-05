@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { withRetry } from "../utility/withRetry";
+import { defaultClient } from "../MockClient/MockClient";
 
 function RetryHookPage() {
   const callApi = useCallback(
