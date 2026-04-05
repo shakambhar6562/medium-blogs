@@ -28,7 +28,7 @@ function RetryHookPage() {
     callApi();
   }, []);
 
-  return <div></div>;
+  return <div>Retry hook page</div>;
 }
 
 export default RetryHookPage;
