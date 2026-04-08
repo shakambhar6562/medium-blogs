@@ -1,24 +1,29 @@
-import { useCallback, useEffect } from "react";
-import { withRetry } from "../utility/withRetry";
-import { defaultClient } from "../MockClient/MockClient";
+import { useEffect } from "react";
 import useRetry from "../hooks/useRetryHook";
 import axios from "axios";
 
 function RetryHookPage() {
-  const { currentState } = useRetry({
+  const { currentState, cancelRequest } = useRetry({
     retryableStatusCodes: [400, 500, 502],
     promiseExecutionStatusHandlers: {
       isRetrySuccessFull: () => {
         console.log("The retry was successful");
       },
     },
-    execute: async () => {
-      return axios.get("/api");
+    execute: async (signal, idx) => {
+      console.log("signal", signal, idx);
+      return axios.get("/api", { signal });
     },
     executeOnMount: true,
   });
 
-  console.log("currentStatecurrentState", currentState);
+  useEffect(() => {
+    let id = setTimeout(() => {
+      cancelRequest();
+    }, 3000);
+
+    return () => clearTimeout(id);
+  }, []);
 
   return <div>Retry hook page</div>;
 }

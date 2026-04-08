@@ -37,8 +37,7 @@ const useRetry = ({
     let finalData = null;
     try {
       for (i = 0; i < retries; i++) {
-        const response = await callApi(...args);
-        console.log("response", response);
+        const response = await callApi(i, ...args);
         if (response?.isAbortErr) {
           throw new Error("The execution was stopped midway");
         }
@@ -53,7 +52,7 @@ const useRetry = ({
           );
           await delayPromise;
         } else {
-          finalData = null;
+          finalData = response;
           break;
         }
       }

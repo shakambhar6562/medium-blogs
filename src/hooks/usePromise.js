@@ -1,10 +1,11 @@
-import { useReducer, useEffect, useCallback } from "react";
+import { useReducer, useEffect, useCallback, useRef } from "react";
 
 const STATE_TYPE = {
   DATA: "DATA",
   LOADING: "LOADING",
   ERROR: "ERROR",
   RESET: "RESET",
+  SET_MULTIPLE: "SET_MULTIPLE",
 };
 
 const updatehandler = (prevState, action) => {
@@ -13,6 +14,12 @@ const updatehandler = (prevState, action) => {
   const currentState = { ...prevState };
 
   switch (type) {
+    case STATE_TYPE.SET_MULTIPLE: {
+      return {
+        ...currentState,
+        ...payload,
+      };
+    }
     case STATE_TYPE.DATA: {
       currentState.data = payload;
       break;
@@ -57,14 +64,16 @@ const usePromise = ({
     data: defaultValue || null,
     isPending: executeOnMount,
     error: defaultError || "",
-    abortController: new AbortController(),
   });
+
+  const abortControllerRef = useRef(new AbortController());
 
   const cancelRequest = useCallback(
     (reason = "") => {
-      currentState.abortController.abort(reason ?? abortReasonDefault);
+      console.log("abortControllerRef.current", abortControllerRef.current);
+      abortControllerRef.current.abort(reason ?? abortReasonDefault);
     },
-    [currentState.abortController, abortReasonDefault],
+    [abortReasonDefault],
   );
 
   const resetState = useCallback(() => {
@@ -74,7 +83,6 @@ const usePromise = ({
         data: defaultValue || null,
         isPending: executeOnMount,
         error: defaultError || "",
-        abortController: new AbortController(),
       },
     });
   }, [defaultValue, executeOnMount, defaultError]);
@@ -88,13 +96,17 @@ const usePromise = ({
             payload: true,
           });
 
-          const signal = currentState.abortController.signal;
+          abortControllerRef.current = new AbortController();
+          const signal = abortControllerRef.current.signal;
 
           const response = await execute(signal, ...args);
 
           updateState({
-            type: STATE_TYPE.DATA,
-            payload: dataMapper(response),
+            type: STATE_TYPE.SET_MULTIPLE,
+            payload: {
+              data: dataMapper(response),
+              error: null,
+            },
           });
 
           promiseExecutionStatusHandlers?.onSuccess?.(response);
@@ -104,10 +116,12 @@ const usePromise = ({
             status: response.status || 200,
           };
         } catch (err) {
-          console.log("errerrerr", err);
           updateState({
-            type: STATE_TYPE.ERROR,
-            payload: err,
+            type: STATE_TYPE.SET_MULTIPLE,
+            payload: {
+              data: defaultValue || null,
+              error: err,
+            },
           });
           if (err.name === isAbortErrorType) {
             promiseExecutionStatusHandlers?.isRequestAbortionComplete?.(err);
@@ -116,7 +130,7 @@ const usePromise = ({
           }
           return {
             data: null,
-            status: err?.response.status || 500,
+            status: err?.response?.status || 500,
             isAbortErr: err.name === isAbortErrorType,
           };
         } finally {
