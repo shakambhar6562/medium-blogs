@@ -1,4 +1,6 @@
 import { useReducer, useEffect, useCallback, useRef } from "react";
+import { isAbortErrorType } from "../constants/commons";
+import useLatest from "./useLatest";
 
 const STATE_TYPE = {
   DATA: "DATA",
@@ -44,8 +46,6 @@ const updatehandler = (prevState, action) => {
   return currentState;
 };
 
-const isAbortErrorType = "CanceledError";
-
 const usePromise = ({
   defaultValue = null,
   executeOnMount = false,
@@ -59,12 +59,26 @@ const usePromise = ({
     isRequestAbortionComplete: () => {},
   },
   dataMapper = (data) => data,
+
+  preflightDependencies = [], // dependencies to check if the promise should be executed
+
+  preflightChecks = [],
 }) => {
   const [currentState, updateState] = useReducer(updatehandler, {
     data: defaultValue || null,
     isPending: executeOnMount,
     error: defaultError || "",
   });
+
+  const performPreflightChecks =
+    Array.isArray(preflightChecks) &&
+    typeof preflightDependencies === "object" &&
+    preflightChecks.length > 0 &&
+    Object.keys(preflightDependencies).length > 0;
+
+  const latestPreflightDependenciesRef = useLatest(
+    preflightDependencies,
+  );
 
   const abortControllerRef = useRef(new AbortController());
 
@@ -90,6 +104,14 @@ const usePromise = ({
   const callApi = useCallback(
     async (...args) => {
       if (typeof execute === "function") {
+        if (performPreflightChecks) {
+          const isEveryCheckPassed = preflightChecks.every((callFn) =>
+            callFn(latestPreflightDependenciesRef.current),
+          );
+          if (!isEveryCheckPassed) {
+            return null;
+          }
+        }
         try {
           updateState({
             type: STATE_TYPE.LOADING,
